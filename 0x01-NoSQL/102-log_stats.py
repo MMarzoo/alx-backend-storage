@@ -16,7 +16,7 @@ if __name__ == "__main__":
     number_of_deletes = log_stats.count_documents({"method": "DELETE"})
     number_of_status_gets = log_stats.count_documents({"method": "GET",
                                                        "path": "/status"})
-    
+
     req_ips = log_stats.aggregate([
         {
             "$group": {'_id': '$ip', 'num_of_req': {'sum': 1}}
@@ -40,5 +40,5 @@ if __name__ == "__main__":
     print('IPs:')
     for req_ip in req_ips:
         ip = req_ip['_id']
-        num_of_req = req_ip['num_of_req']
-        print(f'\t{ip}: {'num_of_reqs'}')
+        num_of_reqs = req_ip['num_of_req']
+        print(f'\t{ip}: {num_of_reqs}')
