@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-'''
+"""
 MongoDB Operations with Python using pymongo
-'''
+"""
 from pymongo import MongoClient
+
 
 if __name__ == "__main__":
     client = MongoClient('mongodb://127.0.0.1:27017')
@@ -17,9 +18,9 @@ if __name__ == "__main__":
     number_of_status_gets = log_stats.count_documents({"method": "GET",
                                                        "path": "/status"})
 
-    req_ips = log_stats.aggregate([
+    request_ips = log_stats.aggregate([
         {
-            "$group": {'_id': '$ip', 'num_of_req': {'sum': 1}}
+            "$group": {'_id': '$ip', 'num_of_req': {'$sum': 1}}
         },
         {
             "$sort": {'num_of_req': -1}
@@ -37,8 +38,9 @@ if __name__ == "__main__":
     print(f'\tmethod PATCH: {number_of_patchs}')
     print(f'\tmethod DELETE: {number_of_deletes}')
     print(f'{number_of_status_gets} status check')
+
     print('IPs:')
-    for req_ip in req_ips:
-        ip = req_ip['_id']
-        num_of_reqs = req_ip['num_of_req']
+    for request_ip in request_ips:
+        ip = request_ip['_id']
+        num_of_reqs = request_ip['num_of_req']
         print(f'\t{ip}: {num_of_reqs}')
