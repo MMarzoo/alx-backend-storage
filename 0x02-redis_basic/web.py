@@ -1,34 +1,43 @@
 #!/usr/bin/env python3
-""" expiring web cache module """
+""" web """
 
-import redis
-import requests
-from typing import Callable
 from functools import wraps
+from typing import Callable
+import requests
+import redis
 
-redis = redis.Redis()
+# Initialize Redis client
+r = redis.Redis()
 
 
-def wrap_requests(fn: Callable) -> Callable:
-    """ Decorator wrapper """
-
-    @wraps(fn)
+def count_requests(method: Callable) -> Callable:
+    """Tracks how many times a particular URL was accessed
+    in the key 'count:{url}' and caches the result with an expiration
+    time of 10 seconds.
+    """
+    @wraps(method)
     def wrapper(url):
-        """ Wrapper for decorator guy """
-        redis.incr(f"count:{url}")
-        cached_response = redis.get(f"cached:{url}")
-        if cached_response:
-            return cached_response.decode('utf-8')
-        result = fn(url)
-        redis.setex(f"cached:{url}", 10, result)
-        return result
+        # Increment the access count
+        r.incr(f"count:{url}")
 
+        # Check if the result is already cached
+        cached_html = r.get(f"cached:{url}")
+        if cached_html:
+            return cached_html.decode('utf-8')
+
+        # Fetch the content and cache it
+        html = method(url)
+        r.setex(f"cached:{url}", 10, html)
+        return html
     return wrapper
 
 
-@wrap_requests
+@count_requests
 def get_page(url: str) -> str:
-    """get page self descriptive
-    """
-    response = requests.get(url)
-    return response.text
+    """Obtains the HTML content of a particular URL and returns it."""
+    req = requests.get(url)
+    return req.text
+
+
+if __name__ == "__main__":
+    get_page('http://google.com')
