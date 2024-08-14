@@ -3,10 +3,20 @@
 A module for using the Redis NoSQL data storage.
 '''
 
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, Any
 from functools import wraps
 from uuid import uuid4
 import redis
+
+
+def count_calls(method: callable) -> callable:
+    ''' Decorator for Cache class methods to track call count '''
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        ''' Wrapper function '''
+        self._redis.incr(method.__qualname__)
+        return method(self, *args, **kwargs)
+    return wrapper
 
 
 class Cache:
@@ -25,9 +35,7 @@ class Cache:
         client.set(key, data)
         return key
 
-    def get(
-        self, key: str, fn: Optional[Callable] = None
-    ) -> Union[str, bytes, int, float, None]:
+    def get(self, key: str, fn: Optional[Callable] = None) -> Any:
         '''  Gets key's value from redis and converts '''
         client = self._redis
         value = client.get(key)
