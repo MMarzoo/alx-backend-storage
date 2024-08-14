@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""
+'''
 Caching request module
-"""
+'''
 import redis
 import requests
 from functools import wraps
 from typing import Callable
+
+client = redis.Redis()
 
 
 def track_get_page(fn: Callable) -> Callable:
@@ -13,13 +15,15 @@ def track_get_page(fn: Callable) -> Callable:
     @wraps(fn)
     def wrapper(url: str) -> str:
         ''' wrapper function '''
-        client = redis.Redis()
         client.incr(f'count:{url}')
         cached_page = client.get(f'{url}')
         if cached_page:
-            return cached_page.decode('utf-8')
+             print("Cache hit")
+             return cached_page.decode('utf-8')
+
+        print("Cache miss")
         response = fn(url)
-        client.set(f'{url}', response, 10)
+        client.setex(f'{url}', 10, response)
         return response
     return wrapper
 
@@ -27,8 +31,13 @@ def track_get_page(fn: Callable) -> Callable:
 @track_get_page
 def get_page(url: str) -> str:
     ''' Function to get page '''
-    response = requests.get(url)
-    return response.text
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching {url}: {e}")
+        return ""
 
 
 if __name__ == '__main__':
