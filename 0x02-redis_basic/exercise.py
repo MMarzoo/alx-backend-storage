@@ -10,12 +10,11 @@ import redis
 
 
 def count_calls(method: Callable) -> Callable:
-    """ Count how many times methods of the Cache class are called """
+    """Decorator to count the number of calls to a method"""
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        """ Increment every time the method is called """
-        key = method.__qualname__
-        self._redis.incr(key)
+        """Wrapper function"""
+        self._redis.incr(method.__qualname__)
         return method(self, *args, **kwargs)
     return wrapper
 
@@ -28,7 +27,7 @@ class Cache:
         self._redis.flushdb()
 
     #@call_history
-    #@count_calls
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         ''' Stores data in redis with randomly generated key '''
         key = str(uuid4())
