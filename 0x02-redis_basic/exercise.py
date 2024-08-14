@@ -25,7 +25,7 @@ class Cache:
         client.set(key, data)
         return key
 
-    def get(self, key: str, fn: Optional[Callable] = None) -> str:
+    def get(self, key: str, fn: Optional[Callable] = None) -> any:
         '''  Gets key's value from redis and converts '''
         client = self._redis
         value = client.get(key)
