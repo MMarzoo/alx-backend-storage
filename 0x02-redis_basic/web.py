@@ -7,29 +7,47 @@ import requests
 from functools import wraps
 from typing import Callable
 
+cache = redis.Redis(host='localhost', port=6379, db=0)
 
-def track_get_page(fn: Callable) -> Callable:
-    ''' Decorator for get_page '''
-    @wraps(fn)
+
+# Decorator for caching and counting accesses
+def cache_page(func: Callable) -> Callable:
+    @wraps(func)
     def wrapper(url: str) -> str:
-        ''' wrapper function '''
-        client = redis.Redis()
-        client.incr(f'count:{url}')
-        cached_page = client.get(f'{url}')
+        # Cache key for the HTML content and access count
+        cache_key = f"content:{url}"
+        count_key = f"count:{url}"
+
+        # Check if the page is in the cache
+        cached_page = cache.get(cache_key)
         if cached_page:
+            print("Cache hit")
+            # Increment the access count in Redis
+            cache.incr(count_key)
             return cached_page.decode('utf-8')
-        response = fn(url)
-        client.set(f'{url}', response, 10)
-        return response
+
+        # If not cached, fetch the page
+        print("Cache miss")
+        result = func(url)
+
+        # Cache the result with an expiration time of 10 seconds
+        cache.setex(cache_key, 10, result)
+
+        # Increment the access count
+        cache.incr(count_key)
+
+        return result
     return wrapper
 
 
-@track_get_page
+@cache_page
 def get_page(url: str) -> str:
-    ''' Function to get page '''
     response = requests.get(url)
     return response.text
 
 
-if __name__ == '__main__':
-    print(get_page('http://slowwly.robertomurray.co.uk'))
+if __name__ == "__main__":
+    url = "http://slowwly.robertomurray.co.uk"
+
+    print(get_page(url))
+    print(get_page(url))
