@@ -29,15 +29,24 @@ class Cache:
         self, key: str, fn: Optional[Callable] = None
     ) -> Union[str, bytes, int, float, None]:
         '''  Gets key's value from redis and converts '''
-        value = self._redis.get(key)
-        return fn(value) if fn else value
+        client = self._redis
+        value = client.get(key)
+        if not value:
+            return
+        if fn is int:
+            return self.get_int(value)
+        if fn is str:
+            return self.get_str(value)
+        if callable(fn):
+            return fn(value)
+        return value
 
-    def get_str(self, key: str) -> str:
-        """Get the value from the Redis database as string"""
-        value = self._redis.get(key)
-        return value.decode("utf-8") if value else "(nil)"
+    def get_str(self, data: bytes) -> str:
+        """ Converts bytes to string
+        """
+        return data.decode('utf-8')
 
-    def get_int(self, key: str) -> int:
-        """Get the value from the Redis database as integer"""
-        value = self._redis.get(key)
-        return int(value.decode("utf-8")) if value else 0
+    def get_int(self, data: bytes) -> int:
+        """ Converts bytes to integers
+        """
+        return int(data)
