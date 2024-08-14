@@ -10,14 +10,13 @@ import redis
 
 
 def count_calls(method: Callable) -> Callable:
-    """Decorator to count the number of calls to a method"""
-
+    """ Count how many times methods of the Cache class are called """
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        """Wrapper function"""
-        self._redis.incr(method.__qualname__)
+        """ Increment every time the method is called """
+        key = method.__qualname__
+        self._redis.incr(key)
         return method(self, *args, **kwargs)
-
     return wrapper
 
 
