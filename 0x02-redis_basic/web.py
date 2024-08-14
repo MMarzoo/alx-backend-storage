@@ -7,23 +7,19 @@ import requests
 from functools import wraps
 from typing import Callable
 
-client = redis.Redis()
-
 
 def track_get_page(fn: Callable) -> Callable:
     ''' Decorator for get_page '''
     @wraps(fn)
     def wrapper(url: str) -> str:
         ''' wrapper function '''
+        client = redis.Redis()
         client.incr(f'count:{url}')
         cached_page = client.get(f'{url}')
         if cached_page:
-             print("Cache hit")
-             return cached_page.decode('utf-8')
-
-        print("Cache miss")
+            return cached_page.decode('utf-8')
         response = fn(url)
-        client.setex(f'{url}', 10, response)
+        client.set(f'{url}', response, 10)
         return response
     return wrapper
 
