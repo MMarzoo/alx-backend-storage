@@ -25,8 +25,8 @@ class Cache:
         client.set(key, data)
         return key
 
-    def get(self, key: str, fn: Optional[Callable] = None) -> any:
-        '''  Gets key's value from redis and converts '''
+    def get(self, key: str, fn: Optional[Callable] = None) -> Any:
+        """ Gets key's value from redis and converts """
         client = self._redis
         value = client.get(key)
         if not value:
@@ -36,12 +36,15 @@ class Cache:
         if fn is str:
             return self.get_str(value)
         if callable(fn):
-            return value
+            return fn(value)
+        return value
 
     def get_str(self, data: bytes) -> str:
-        ''' Converts bytes to string '''
+        """ Converts bytes to string
+        """
         return data.decode('utf-8')
 
     def get_int(self, data: bytes) -> int:
-        ''' Converts bytes to int '''
-        return int(data.decode('utf-8'))
+        """ Converts bytes to integers
+        """
+        return int(data)
