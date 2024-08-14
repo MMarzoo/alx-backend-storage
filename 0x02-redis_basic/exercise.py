@@ -19,17 +19,19 @@ def count_calls(method: Callable) -> Callable:
     return wrapper
 
 
-def call_history(method: callable) -> callable:
-    ''' Decorator for Cache class method to track args '''
+def call_history(method: Callable) -> Callable:
+    """ Decorator for Cache class method to track args
+    """
     @wraps(method)
-    def wrapper(self: Any, *args) ->str:
-        ''' Wrapper function '''
+    def wrapper(self: Any, *args) -> str:
+        """ Wraps called method and tracks its passed argument by storing
+            them to redis
+        """
         self._redis.rpush(f'{method.__qualname__}:inputs', str(args))
         output = method(self, *args)
         self._redis.rpush(f'{method.__qualname__}:outputs', output)
         return output
     return wrapper
-
 
 class Cache:
     ''' Caching class '''
