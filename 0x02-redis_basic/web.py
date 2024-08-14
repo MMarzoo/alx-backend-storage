@@ -1,43 +1,72 @@
 #!/usr/bin/env python3
-""" web """
+
+"""
+Function uses the requests module to obtain the HTML content of a particular
+URL and returns it
+"""
 
 from functools import wraps
-from typing import Callable
-import requests
+
 import redis
+import requests
 
-# Initialize Redis client
-r = redis.Redis()
+store = redis.Redis()
 
 
-def count_requests(method: Callable) -> Callable:
-    """Tracks how many times a particular URL was accessed
-    in the key 'count:{url}' and caches the result with an expiration
-    time of 10 seconds.
+def count_url_usage(method):
     """
+    Decorator function to count URL usage and cache the data
+
+    Function caches the result of the method for a given URL
+
+    Parameters
+        url: URL for which the result should be cached
+
+    Return
+        str: Cached HTML content for the given URL
+    """
+
     @wraps(method)
     def wrapper(url):
-        # Increment the access count
-        r.incr(f"count:{url}")
+        """
+        Wrapper function to cache the result of the method for a given URL
 
-        # Check if the result is already cached
-        cached_html = r.get(f"cached:{url}")
-        if cached_html:
-            return cached_html.decode('utf-8')
+        Parameters
+            url: URL for which the result should be cached
 
-        # Fetch the content and cache it
+        Return
+            str: Cached HTML content for the given URL
+        """
+
+        cached_key = f"cached:{url}"
+        cached_data = store.get(cached_key)
+
+        if cached_data:
+            return cached_data.decode("utf-8")  # type: ignore
+
+        count_key = f"count:{url}"
         html = method(url)
-        r.setex(f"cached:{url}", 10, html)
+
+        store.incr(count_key)
+        store.set(cached_key, html)
+        store.expire(cached_key, 10)
         return html
     return wrapper
 
 
-@count_requests
+@count_url_usage
 def get_page(url: str) -> str:
-    """Obtains the HTML content of a particular URL and returns it."""
-    req = requests.get(url)
-    return req.text
+    """
+    Simply counts the number of times the function was accessed
 
+    Retrieves the content of the given URL and returns it as a string
 
-if __name__ == "__main__":
-    get_page('http://google.com')
+    Parameters
+        url: The URL to retrieve the content from
+
+    Return
+        str: The content of the URL
+    """
+
+    response = requests.get(url)
+    return response.text
