@@ -44,4 +44,4 @@ class Cache:
 
     def get_int(self, data: bytes) -> int:
         ''' Converts bytes to int '''
-        return int(data)
+        return int(data.decode('utf-8'))
