@@ -2,6 +2,7 @@
 '''
 Caching request module
 '''
+
 import redis
 import requests
 from functools import wraps
@@ -27,13 +28,8 @@ def track_get_page(fn: Callable) -> Callable:
 @track_get_page
 def get_page(url: str) -> str:
     ''' Function to get page '''
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching {url}: {e}")
-        return ""
+    response = requests.get(url)
+    return response.text
 
 
 if __name__ == '__main__':
